@@ -1,15 +1,17 @@
-# Install virtualenv
+# Digikala backend with django
+
+### Install virtualenv
 `pip install virtualenv`
 
 
-# Create a virtualenv
+### Create a virtualenv
 `python -m venv myenv`
 
-# Active virtualenv
+### Active virtualenv
 `myenv\Scripts\activate`
 
-# Install the dependencies
+### Install the dependencies
 `pip install -r requirements.txt`
 
-# Run project
+### Run project
 `python manage.py runserver`
