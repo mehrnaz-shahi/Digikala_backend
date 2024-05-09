@@ -1,5 +1,16 @@
 from rest_framework import serializers
 from .models import Product, ProductImage, ProductFeature, Color
+from comments.models import ProductComment
+from score.models import ProductRating
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username']
 
 
 class ProductImageSerializer(serializers.ModelSerializer):
@@ -20,20 +31,48 @@ class ColorSerializer(serializers.ModelSerializer):
         fields = ['id', 'code']
 
 
+class ProductCommentSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+
+    class Meta:
+        model = ProductComment
+        fields = ['user', 'text', 'created_at']
+
+
 class ProductDetailSerializer(serializers.ModelSerializer):
     colors = ColorSerializer(many=True, read_only=True)  # Use ColorSerializer for colors field
 
     images = ProductImageSerializer(many=True, read_only=True)
     product_features = ProductFeatureSerializer(many=True, read_only=True)
 
+    num_ratings = serializers.SerializerMethodField()
+    num_comments = serializers.SerializerMethodField()
+
+    avg_rating = serializers.SerializerMethodField()
+
+    comments = ProductCommentSerializer(many=True, read_only=True)
+
     class Meta:
         model = Product
-        fields = ['id', 'name', 'description', 'price', 'categories', 'colors', 'retailer', 'average_rating', 'images',
-                  'product_features', 'is_discounted', 'discount_percentage', 'discounted_price']
+        fields = ['id', 'name', 'description', 'price', 'categories', 'colors', 'retailer', 'avg_rating',
+                  'num_ratings', 'images', 'comments',
+                  'product_features', 'is_discounted', 'discount_percentage', 'discounted_price', 'num_comments']
 
     def get_discounted_price(self, obj):
         # Access the discounted_price property of the model instance
         return obj.discounted_price
+
+    def get_num_ratings(self, obj):
+        # Access the num_ratings property of the model instance
+        return obj.num_ratings
+
+    def get_num_comments(self, obj):
+        # Access the num_comments property of the model instance
+        return obj.num_comments
+
+    def get_avg_rating(self, obj):
+        # Access the num_comments property of the model instance
+        return obj.average_rating
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -68,3 +107,15 @@ class ProductSerializer(serializers.ModelSerializer):
         # Remove 'images' key if present (already handled by 'first_image')
         ret.pop('images', None)
         return ret
+
+
+class ProductRatingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductRating
+        fields = ['rating']
+
+
+class ProductCommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductComment
+        fields = ['text']

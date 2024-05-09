@@ -28,7 +28,7 @@ class TemporaryUser(models.Model):
 class User(AbstractUser):
     first_name = models.CharField(max_length=255, null=True, blank=True)
     last_name = models.CharField(max_length=255, null=True, blank=True)
-    username = models.CharField(max_length=80, blank=True)
+    username = models.CharField(max_length=80, blank=True, default='کاربر')
     birth_date = models.DateField(null=True, blank=True)
     phone_number = models.CharField(unique=True, max_length=11)
     national_code = models.CharField(max_length=10, unique=True, null=True, blank=True)

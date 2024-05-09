@@ -51,6 +51,15 @@ class Product(models.Model):
     def average_rating(self):
         avg_rating = self.ratings.aggregate(Avg('rating'))['rating__avg']
         return "{:.1f}".format(avg_rating) if avg_rating is not None else "0"
+
+    @property
+    def num_ratings(self):
+        return self.ratings.count()
+
+    @property
+    def num_comments(self):
+        return self.comments.count()
+
     @property
     def discounted_price(self):
         if self.is_discounted:
