@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'drf_yasg',
 
     'rest_framework_simplejwt',
+    'django_filters',
 
 ]
 
@@ -66,6 +67,9 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         # 'rest_framework.authentication.SessionAuthentication',
     ),
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ],
 }
 
 MIDDLEWARE = [
@@ -195,4 +199,3 @@ JAZZMIN_SETTINGS = {
     "site_header": "Django & React JWT Authentication ",
     "site_brand": "My digikala",
 }
-

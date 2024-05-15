@@ -32,11 +32,9 @@ class ColorSerializer(serializers.ModelSerializer):
 
 
 class ProductCommentSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
-
     class Meta:
         model = ProductComment
-        fields = ['user', 'text', 'created_at']
+        fields = ['user', 'product', 'text', 'created_at']
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):
@@ -112,10 +110,9 @@ class ProductSerializer(serializers.ModelSerializer):
 class ProductRatingSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductRating
-        fields = ['rating']
+        fields = ['id', 'product', 'rating', 'created_at']
+        read_only_fields = ['created_at']
 
 
-class ProductCommentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ProductComment
-        fields = ['text']
+
+

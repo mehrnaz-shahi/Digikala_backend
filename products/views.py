@@ -4,6 +4,9 @@ from rest_framework.response import Response
 from .models import Product
 from .serializers import ProductDetailSerializer, ProductSerializer, ProductCommentSerializer, ProductRatingSerializer
 from rest_framework.permissions import IsAuthenticated
+from score.models import ProductRating
+from comments.models import ProductComment
+from .filters import ProductFilter
 
 
 class ProductDetailView(RetrieveAPIView):
@@ -54,36 +57,61 @@ class ProductSearchAPIView(ListAPIView):
         return Response(serializer.data)
 
 
-class RateOrCommentProductAPIView(CreateAPIView):
+# class RateOrCommentProductAPIView(CreateAPIView):
+#     permission_classes = [IsAuthenticated]
+#
+#     def post(self, request, *args, **kwargs):
+#         user = request.user
+#         product_id = request.data.get('productId')
+#         rate = request.data.get('rate')
+#         comment = request.data.get('comment')
+#
+#         if product_id is None or (rate is None and comment is None):
+#             return Response({'error': 'productId, rate, and/or comment are missing.'},
+#                             status=status.HTTP_400_BAD_REQUEST)
+#
+#         # if not user.products.filter(id=product_id).exists():
+#         #     return Response({'error': 'You have not purchased this product yet.'}, status=status.HTTP_403_FORBIDDEN)
+#
+#         if rate is not None:
+#             rating_data = {'user': user.id, 'product': product_id, 'rating': rate}
+#             rating_serializer = ProductRatingSerializer(data=rating_data)
+#             if rating_serializer.is_valid():
+#                 rating_serializer.save()
+#             else:
+#                 return Response(rating_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#
+#         if comment is not None:
+#             comment_data = {'user': user.id, 'product': product_id, 'text': comment}
+#             comment_serializer = ProductCommentSerializer(data=comment_data)
+#             if comment_serializer.is_valid():ProductCommentSerializer
+#                 comment_serializer.save()
+#             else:
+#                 return Response(comment_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#
+#         return Response({'success': 'Rating and/or comment added successfully.'}, status=status.HTTP_201_CREATED)
+
+
+class ProductRatingView(CreateAPIView):
+    queryset = ProductRating.objects.all()
+    serializer_class = ProductRatingSerializer
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, *args, **kwargs):
-        user = request.user
-        product_id = request.data.get('productId')
-        rate = request.data.get('rate')
-        comment = request.data.get('comment')
+    def perform_create(self, serializer):
+        # Assign the current logged-in user to the rating
+        serializer.save(user=self.request.user)
 
-        if product_id is None or (rate is None and comment is None):
-            return Response({'error': 'productId, rate, and/or comment are missing.'},
-                            status=status.HTTP_400_BAD_REQUEST)
 
-        # if not user.products.filter(id=product_id).exists():
-        #     return Response({'error': 'You have not purchased this product yet.'}, status=status.HTTP_403_FORBIDDEN)
+class ProductCommentCreateView(CreateAPIView):
+    queryset = ProductComment.objects.all()
+    serializer_class = ProductCommentSerializer
+    permission_classes = [IsAuthenticated]
 
-        if rate is not None:
-            rating_data = {'user': user.id, 'product': product_id, 'rating': rate}
-            rating_serializer = ProductRatingSerializer(data=rating_data)
-            if rating_serializer.is_valid():
-                rating_serializer.save()
-            else:
-                return Response(rating_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
-        if comment is not None:
-            comment_data = {'user': user.id, 'product': product_id, 'text': comment}
-            comment_serializer = ProductCommentSerializer(data=comment_data)
-            if comment_serializer.is_valid():
-                comment_serializer.save()
-            else:
-                return Response(comment_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({'success': 'Rating and/or comment added successfully.'}, status=status.HTTP_201_CREATED)
+class ProductFilterView(ListAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    filterset_class = ProductFilter
