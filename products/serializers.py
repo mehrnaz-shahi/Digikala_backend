@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product, ProductImage, ProductFeature, Color
+from .models import Product, ProductImage, ProductFeature, Color, Category
 from comments.models import ProductComment
 from score.models import ProductRating
 from django.contrib.auth import get_user_model
@@ -19,6 +19,23 @@ class ProductImageSerializer(serializers.ModelSerializer):
         fields = ['id', 'image']
 
 
+class RecursiveField(serializers.Serializer):
+    def to_representation(self, value):
+        serializer_class = self.parent.__class__
+        if hasattr(self.parent, 'child'):
+            serializer_class = self.parent.child.__class__
+        serializer = serializer_class(value, context=self.context)
+        return serializer.data
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    parent_category = RecursiveField()
+
+    class Meta:
+        model = Category
+        fields = ['id', 'name', 'parent_category']
+
+
 class ProductFeatureSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductFeature
@@ -28,7 +45,7 @@ class ProductFeatureSerializer(serializers.ModelSerializer):
 class ColorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Color
-        fields = ['id', 'code']
+        fields = ['id', 'code', 'name']
 
 
 class ProductCommentSerializer(serializers.ModelSerializer):
@@ -38,38 +55,48 @@ class ProductCommentSerializer(serializers.ModelSerializer):
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):
-    colors = ColorSerializer(many=True, read_only=True)  # Use ColorSerializer for colors field
-
+    colors = ColorSerializer(many=True, read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
     product_features = ProductFeatureSerializer(many=True, read_only=True)
-
     num_ratings = serializers.SerializerMethodField()
     num_comments = serializers.SerializerMethodField()
-
     avg_rating = serializers.SerializerMethodField()
-
     comments = ProductCommentSerializer(many=True, read_only=True)
+    categories = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'description', 'price', 'categories', 'colors', 'retailer', 'avg_rating',
-                  'num_ratings', 'images', 'comments',
-                  'product_features', 'is_discounted', 'discount_percentage', 'discounted_price', 'num_comments']
+        fields = [
+            'id', 'name', 'description', 'price', 'categories', 'colors', 'retailer',
+            'avg_rating', 'num_ratings', 'images', 'comments', 'product_features',
+            'is_discounted', 'discount_percentage', 'discounted_price', 'num_comments'
+        ]
+
+    def get_categories(self, obj):
+        def get_all_parents(category):
+            parents = []
+            while category.parent_category:
+                category = category.parent_category
+                parents.append(category)
+            return parents
+
+        deepest_categories = set(obj.categories.all())
+        for category in obj.categories.all():
+            parents = get_all_parents(category)
+            deepest_categories.difference_update(parents)
+
+        return CategorySerializer(deepest_categories, many=True).data
 
     def get_discounted_price(self, obj):
-        # Access the discounted_price property of the model instance
         return obj.discounted_price
 
     def get_num_ratings(self, obj):
-        # Access the num_ratings property of the model instance
         return obj.num_ratings
 
     def get_num_comments(self, obj):
-        # Access the num_comments property of the model instance
         return obj.num_comments
 
     def get_avg_rating(self, obj):
-        # Access the num_comments property of the model instance
         return obj.average_rating
 
 
@@ -112,7 +139,3 @@ class ProductRatingSerializer(serializers.ModelSerializer):
         model = ProductRating
         fields = ['id', 'product', 'rating', 'created_at']
         read_only_fields = ['created_at']
-
-
-
-
